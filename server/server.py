@@ -1,14 +1,13 @@
 import flwr as fl
 import torch
-from torch import nn
 import torch.nn.functional as F
-
-from client.client import ContactClient
+from torch import nn
 
 INPUT_DIM = 2
 OUTPUT_DIM = 3
 HIDDEN_DIM = 6
-NUM_CLIENTS = 10
+
+NUM_CLIENTS = 3
 
 
 class LSTMTagger(nn.Module):
@@ -41,7 +40,7 @@ def get_parameters(net):
 Net = LSTMTagger(INPUT_DIM, HIDDEN_DIM, OUTPUT_DIM)
 
 # Create an instance of the model and get the parameters
-params = get_parameters(Net())
+params = get_parameters(Net)
 
 
 # Pass parameters to the Strategy for server-side parameter initialization
@@ -61,18 +60,25 @@ if DEVICE.type == "cuda":
     client_resources = {"num_gpus": 1}
 
 
-def client_fn(cid) -> ContactClient:
-    net = Net().to(DEVICE)
-    # trainloader = trainloaders[int(cid)]
-    # valloader = valloaders[int(cid)]
-    return ContactClient(cid, net)
+# def client_fn(cid) -> ContactClient:
+#     net = Net().to(DEVICE)
+#     # trainloader = trainloaders[int(cid)]
+#     # valloader = valloaders[int(cid)]
+#     return ContactClient(cid, net)
 
 
 # Start simulation
-fl.simulation.start_simulation(
-    client_fn=client_fn,
-    num_clients=NUM_CLIENTS,
-    config=fl.server.ServerConfig(num_rounds=3),  # Just three rounds
+# fl.simulation.start_simulation(
+#     client_fn=None,
+#     num_clients=NUM_CLIENTS,
+#     config=fl.server.ServerConfig(num_rounds=3),  # Just three rounds
+#     strategy=strategy,
+#     client_resources=client_resources,
+# )
+
+# Start Flower server
+fl.server.start_server(
+    server_address="0.0.0.0:8082",
+    config=fl.server.ServerConfig(num_rounds=3),
     strategy=strategy,
-    client_resources=client_resources,
 )
